@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3d7c">
+<title>School MS</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background:#f4f7fc; color:#222; min-height:100vh; }
+  .screen { display:none; min-height:100vh; }
+  .screen.active { display:block; }
+  #login { background: linear-gradient(135deg, #1a3d7c, #2e5fa3); display:flex; align-items:center; justify-content:center; padding:20px; }
+  #login.active { display:flex; }
+  .login-box { background:#fff; border-radius:16px; padding:28px 24px; width:100%; max-width:360px; box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+  .login-box h1 { color:#1a3d7c; font-size:24px; text-align:center; margin-bottom:4px; }
+  .login-box p { text-align:center; color:#888; font-size:13px; margin-bottom:24px; }
+  .role-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .role-tabs button { flex:1; padding:10px 4px; border:2px solid #e0e6f0; background:#fff; border-radius:10px; font-size:12px; color:#666; cursor:pointer; font-weight:600; }
+  .role-tabs button.sel { border-color:#1a3d7c; background:#1a3d7c; color:#fff; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:12px; color:#666; margin-bottom:6px; font-weight:600; }
+  .field input { width:100%; padding:12px 14px; border:2px solid #e0e6f0; border-radius:10px; font-size:15px; outline:none; }
+  .field input:focus { border-color:#1a3d7c; }
+  .btn { width:100%; padding:14px; background:#1a3d7c; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .btn:active { background:#122a55; }
+  .hint { text-align:center; font-size:11px; color:#999; margin-top:16px; line-height:1.6; }
+  .topbar { background:#1a3d7c; color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+  .topbar h2 { font-size:17px; font-weight:600; }
+  .topbar .logout { background:rgba(255,255,255,0.2); border:none; color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; }
+  .content { padding:16px 16px 90px; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat { background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+  .stat .num { font-size:22px; font-weight:700; color:#1a3d7c; }
+  .stat .lbl { font-size:11px; color:#888; margin-top:2px; }
+  .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+  .card h3 { font-size:14px; color:#1a3d7c; margin-bottom:10px; }
+  .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+  .row:last-child { border-bottom:none; }
+  .row .name { color:#333; }
+  .row .val { color:#1a3d7c; font-weight:600; }
+  .bottomnav { position:fixed; bottom:0; left:0; right:0; background:#fff; display:flex; box-shadow:0 -2px 10px rgba(0,0,0,0.08); z-index:20; }
+  .bottomnav button { flex:1; padding:10px 4px; border:none; background:none; font-size:10px; color:#999; cursor:pointer; }
+  .bottomnav button.sel { color:#1a3d7c; font-weight:700; }
+  .bottomnav .icon { font-size:18px; display:block; margin-bottom:2px; }
+  .page { display:none; }
+  .page.active { display:block; }
+</style>
+</head>
+<body>
+
+<div id="login" class="screen active">
+  <div class="login-box">
+    <h1>🏫 School MS</h1>
+    <p>Management System v1.0</p>
+    <div class="role-tabs">
+      <button class="sel" onclick="pickRole(this,'admin')">Admin</button>
+      <button onclick="pickRole(this,'teacher')">Teacher</button>
+      <button onclick="pickRole(this,'student')">Student</button>
+    </div>
+    <div class="field"><label>Email</label><input type="email" id="email" placeholder="demo@school.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="password" placeholder="demo123"></div>
+    <button class="btn" onclick="doLogin()">Login</button>
+    <div class="hint">Demo: any email + password</div>
+  </div>
+</div>
+
+<div id="app" class="screen">
+  <div class="topbar">
+    <h2 id="pageTitle">Dashboard</h2>
+    <button class="logout" onclick="doLogout()">Logout</button>
+  </div>
+  <div class="content">
+    <div class="page active" id="page-home">
+      <div class="stats">
+        <div class="stat"><div class="num" id="statStudents">0</div><div class="lbl">Students</div></div>
+        <div class="stat"><div class="num" id="statTeachers">0</div><div class="lbl">Teachers</div></div>
+        <div class="stat"><div class="num" id="statAttendance">--</div><div class="lbl">Attendance</div></div>
+        <div class="stat"><div class="num" id="statFees">0</div><div class="lbl">Fees (₹K)</div></div>
+      </div>
+      <div class="card">
+        <h3>📋 Recent Activity</h3>
+        <div class="row"><span class="name">New student added</span><span class="val">2m ago</span></div>
+        <div class="row"><span class="name">Class 10A attendance</span><span class="val">5m ago</span></div>
+        <div class="row"><span class="name">Fee payment received</span><span class="val">10m ago</span></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-students">
+      <div class="card">
+        <h3>👨‍🎓 Add Student</h3>
+        <div class="field"><label>Name</label><input id="sName" placeholder="Student name"></div>
+        <div class="field"><label>Class</label><input id="sClass" placeholder="e.g. 10A"></div>
+        <button class="btn" onclick="addStudent()">Add Student</button>
+      </div>
+      <div class="card"><h3>Student List</h3><div id="studentList"></div></div>
+    </div>
+
+    <div class="page" id="page-marks">
+      <div class="card">
+        <h3>📝 Enter Marks</h3>
+        <div class="field"><label>Student</label><input id="mStudent" placeholder="Name"></div>
+        <div class="field"><label>Subject</label><input id="mSubject" placeholder="Subject"></div>
+        <div class="field"><label>Marks (0-100)</label><input id="mMarks" type="number" placeholder="Marks"></div>
+        <button class="btn" onclick="addMark()">Save Mark</button>
+      </div>
+      <div class="card"><h3>Recent Marks</h3><div id="markList"></div></div>
+    </div>
+
+    <div class="page" id="page-settings">
+      <div class="card">
+        <h3>⚙️ App Info</h3>
+        <div class="row"><span class="name">Version</span><span class="val">1.0</span></div>
+        <div class="row"><span class="name">Storage</span><span class="val">Phone Local</span></div>
+        <div class="row"><span class="name">Mode</span><span class="val">Demo</span></div>
+      </div>
+      <div class="card">
+        <h3>🗑️ Danger Zone</h3>
+        <button class="btn" style="background:#d63b3b" onclick="resetAll()">Reset All Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="sel" onclick="nav(this,'home')"><span class="icon">🏠</span>Home</button>
+    <button onclick="nav(this,'students')"><span class="icon">👨‍🎓</span>Students</button>
+    <button onclick="nav(this,'marks')"><span class="icon">📝</span>Marks</button>
+    <button onclick="nav(this,'settings')"><span class="icon">⚙️</span>Settings</button>
+  </div>
+</div>
+
+<script>
+let currentRole = 'admin';
+let db = JSON.parse(localStorage.getItem('sms_db') || 'null') || {
+  students: [
+    { name: 'Rahul Sharma', cls: '10A' },
+    { name: 'Priya Patel', cls: '10A' },
+    { name: 'Arjun Kumar', cls: '9B' }
+  ],
+  teachers: [{ name: 'Mr. Verma' }, { name: 'Ms. Singh' }],
+  marks: [{ student: 'Rahul Sharma', subject: 'Math', marks: 85 }],
+  fees: 25000
+};
+function save() { localStorage.setItem('sms_db', JSON.stringify(db)); }
+function pickRole(btn, role) {
+  currentRole = role;
+  document.querySelectorAll('.role-tabs button').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('password').value.trim();
+  if (!email || !pass) { alert('Enter email and password'); return; }
+  document.getElementById('login').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  refresh();
+}
+function doLogout() {
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login').classList.add('active');
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+}
+function nav(btn, page) {
+  document.querySelectorAll('.bottomnav button').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
+}
+function refresh() {
+  document.getElementById('statStudents').textContent = db.students.length;
+  document.getElementById('statTeachers').textContent = db.teachers.length;
+  document.getElementById('statAttendance').textContent = '94%';
+  document.getElementById('statFees').textContent = Math.round(db.fees / 1000);
+  document.getElementById('studentList').innerHTML = db.students.length
+    ? db.students.map(s => `<div class="row"><span class="name">${s.name}</span><span class="val">${s.cls}</span></div>`).join('')
+    : '<div class="row"><span class="name">No students yet</span></div>';
+  document.getElementById('markList').innerHTML = db.marks.length
+    ? db.marks.slice(-5).reverse().map(m => `<div class="row"><span class="name">${m.student} — ${m.subject}</span><span class="val">${m.marks}</span></div>`).join('')
+    : '<div class="row"><span class="name">No marks yet</span></div>';
+}
+function addStudent() {
+  const name = document.getElementById('sName').value.trim();
+  const cls = document.getElementById('sClass').value.trim();
+  if (!name || !cls) { alert('Fill both fields'); return; }
+  db.students.push({ name, cls });
+  save(); refresh();
+  document.getElementById('sName').value = '';
+  document.getElementById('sClass').value = '';
+  alert('✅ Student added');
+}
+function addMark() {
+  const student = document.getElementById('mStudent').value.trim();
+  const subject = document.getElementById('mSubject').value.trim();
+  const marks = parseInt(document.getElementById('mMarks').value);
+  if (!student || !subject || isNaN(marks)) { alert('Fill all fields'); return; }
+  if (marks < 0 || marks > 100) { alert('Marks must be 0-100'); return; }
+  db.marks.push({ student, subject, marks });
+  save(); refresh();
+  document.getElementById('mStudent').value = '';
+  document.getElementById('mSubject').value = '';
+  document.getElementById('mMarks').value = '';
+  alert('✅ Mark saved');
+}
+function resetAll() {
+  if (!confirm('Delete all data?')) return;
+  localStorage.removeItem('sms_db');
+  location.reload();
+}
+refresh();
+</script>
+</body>
+</html>
